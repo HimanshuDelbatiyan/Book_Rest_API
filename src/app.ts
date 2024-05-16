@@ -2,6 +2,7 @@ import express, { Request, Response , NextFunction } from "express";
 import createHttpError, { HttpError } from "http-errors";
 import { config } from "./config/config";
 import GlobalErrorHandler from "./middleware/globalErrorHandler";
+import userRouter from "./user/userRouter";
 // Creating the instance of Express Application
 const app = express();
 
@@ -17,6 +18,12 @@ app.get("/",(req,res,next)=>
     // and it is one of the principles of REST Architectural Style
     res.json({message: "Welcome to  PORT 3000"})
 })
+
+
+app.use("/api/users/", userRouter)
+
+
+
 
 // ------------> Global Error Handler:
 app.use(GlobalErrorHandler)
