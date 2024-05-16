@@ -7,7 +7,7 @@ conf();
 const _config = 
 {
     port: process.env.PORT,
-    apiKey: "LOLA"
+    mongoURL: process.env.MONGO_CONNECTION_STRING
 }
 
 // By using the "Object.freeze()" we are making the object.
