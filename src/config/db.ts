@@ -6,16 +6,21 @@ const connectDB = async () =>
 {
     try
     {
-        mongoose.connection.on("connected", () => {
+        
+        // Registering the Event Listeners
+        const db = mongoose.connection;
+
+        db.on("connected", () => {
             console.log("Connected SuccessFully to Database")
         })
 
-        mongoose.connection.on("error",(err)=>
+        db.on("error",(err)=>
         {
             console.error("Error in Connecting to database ",err)
         })
-        
         await mongoose.connect(config.mongoURL as string);
+
+        
         
     }
     catch (err)
