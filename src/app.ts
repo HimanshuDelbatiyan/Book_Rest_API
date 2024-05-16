@@ -3,8 +3,16 @@ import createHttpError, { HttpError } from "http-errors";
 import { config } from "./config/config";
 import GlobalErrorHandler from "./middleware/globalErrorHandler";
 import userRouter from "./user/userRouter";
+
+
+
+
 // Creating the instance of Express Application
 const app = express();
+
+// This middleware will parse the requests containing the JSON Data if we don't use this then this will cause error
+// cause we will not able to access the json data associated with the request
+app.use(express.json())
 
 // Routes:
 // HTTP Methods 
