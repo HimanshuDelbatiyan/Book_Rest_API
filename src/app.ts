@@ -1,11 +1,7 @@
 import express, { Request, Response , NextFunction } from "express";
 import createHttpError, { HttpError } from "http-errors";
-import { config } from "./config/config";
 import GlobalErrorHandler from "./middleware/globalErrorHandler";
 import userRouter from "./user/userRouter";
-
-
-
 
 // Creating the instance of Express Application
 const app = express();
@@ -24,13 +20,13 @@ app.get("/",(req,res,next)=>
 
     // Sending an response of type "JSON".
     // and it is one of the principles of REST Architectural Style
-    res.json({message: "Welcome to  PORT 3000"})
+    res.json({message: "Welcome to Home Page",})
 })
 
 
+// Mounting the Router instance to the an Specific URL.
+// Although this is a middleware which will be executed for each requests.
 app.use("/api/users/", userRouter)
-
-
 
 
 // ------------> Global Error Handler:

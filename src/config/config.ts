@@ -1,14 +1,19 @@
+// Importing the package which will allows us to manage the "Environment Variable" in a simple way
 import { config as conf} from "dotenv";
-// Implementing the .env file inside we have defined the environment variables.
+// By Executing this method we are reading the environment variables defined within the ".env" file
+// and adding them to the "Current Running Application " "process.env" object
+// Which are then accessible to use.
 conf();
 
 // Note: By Starting the name with the underscore we are 
 // Specifying that this object is "PRIVATE"
+// JUST AN CONVENTION
 const _config = 
 {
     port: process.env.PORT,
     mongoURL: process.env.MONGO_CONNECTION_STRING,
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    jwtSecret: process.env.JWT_SECRET
 }
 
 // By using the "Object.freeze()" we are making the object.
