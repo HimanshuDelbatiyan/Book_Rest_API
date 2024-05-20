@@ -13,10 +13,11 @@ const createUser = async (req:Request,res:Response,next:NextFunction) =>
     {
         const error = createHttpError(400, "All fields are required")
 
-        return next(error);
+        return next(error); // Pass the Error to Global Error Handler
     }
-    // Database Call
+    // Database Call (Fetching the user based on email field.)
     const user = await UserModel.findOne({email})
+
     // Process
     if(user)
     {
@@ -32,11 +33,19 @@ const createUser = async (req:Request,res:Response,next:NextFunction) =>
         name,email,password:hashedPassword
     })
 
-    // Token Generation---> JWT (JsonWebtoken)
-    const token = sign({sub:newUser._id}, config.jwtSecret as string, {expiresIn:'7d'})
+    const payload = {
+        sub: newUser._id
+    }
 
-    // Response
-    res.json({id:token})
+    // Token Generation---> JWT (JsonWebtoken)
+    // Note: .sign(method) by default use the HS256 algorithm for token generation
+    const token = sign(payload, config.jwtSecret as string, {
+        expiresIn:'7d',
+        algorithm: "HS256" // Specifying the algorithm
+    })
+
+    // Response sending the generated token as response to the user.
+    res.json({accessToken:token})
 }
 
 export { createUser }
