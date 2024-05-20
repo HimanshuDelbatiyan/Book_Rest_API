@@ -33,6 +33,7 @@ const createUser = async (req:Request,res:Response,next:NextFunction) =>
     }
     catch(err)
     {
+        // Note: 500 Status Code means internal server error.
         return next(createHttpError(500,"Error While getting the user"))
     }
 
@@ -48,6 +49,7 @@ const createUser = async (req:Request,res:Response,next:NextFunction) =>
     }
     catch(err)
     {
+        // Note: 500 Status Code means internal server error.
         return next(createHttpError(500, "Error while creating the user"))
     }
 
@@ -68,7 +70,8 @@ const createUser = async (req:Request,res:Response,next:NextFunction) =>
         })
 
         // Response sending the generated token as response to the user.
-        res.json({accessToken:token})
+        // Note: 201 Status Code is used when a new resource is created.
+        res.status(201).json({accessToken:token})
     }
     catch(err)
     {
@@ -76,4 +79,10 @@ const createUser = async (req:Request,res:Response,next:NextFunction) =>
     }    
 }
 
-export { createUser }
+const loginUser = async (req:Request,res:Response,next:NextFunction) =>
+{
+    res.status(201).json({message:"OK"})
+
+}
+
+export { createUser,loginUser}
