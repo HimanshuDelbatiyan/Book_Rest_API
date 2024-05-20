@@ -2,6 +2,7 @@ import express, { Request, Response , NextFunction } from "express";
 import createHttpError, { HttpError } from "http-errors";
 import GlobalErrorHandler from "./middleware/globalErrorHandler";
 import userRouter from "./user/userRouter";
+import bookRouter from "./book/bookRouter";
 
 // Creating the instance of Express Application
 const app = express();
@@ -28,7 +29,7 @@ app.get("/",(req,res,next)=>
 // Mounting the Router instance to the an Specific URL.
 // Although this is a middleware which will be executed for each requests.
 app.use("/api/users/", userRouter)
-
+app.use("/api/books/",bookRouter)
 
 // ------------> Global Error Handler:
 app.use(GlobalErrorHandler)
