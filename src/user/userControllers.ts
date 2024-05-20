@@ -81,8 +81,54 @@ const createUser = async (req:Request,res:Response,next:NextFunction) =>
 
 const loginUser = async (req:Request,res:Response,next:NextFunction) =>
 {
-    res.status(201).json({message:"OK"})
+    const {email, password} = req.body;
+
+    if(!email || !password)
+    {
+        // Note: Here 400 Status Code means that the error is generated because user sent the wrong data etc
+        return next(createHttpError(400,"All Fields are required"))
+    }
+
+    try
+    {
+        const user = await UserModel.findOne({email})
+
+        if(!user)
+        {
+            //Note: Status Code 404 is used when something is not found
+            return next(createHttpError(404,"User not Found"))
+        }
+
+        // Comparing the user sent password against the one stored in the database as well as hashing the password for matching purpose.
+        const isMatch = await bcrypt.compare(password,user.password as string);
+
+
+        if(!isMatch)
+        {
+            return next(createHttpError(400,"Username or password is incorrect"))
+        }
+
+        try
+        {
+            // Token Generation---> JWT (JsonWebtoken)
+            // Note: .sign(method) by default use the HS256 algorithm for token generation
+            const token = sign({sub:user._id}, config.jwtSecret as string, {
+                expiresIn:'7d',
+                algorithm: "HS256" // Specifying the algorithm
+            })
+
+            res.status(201).json({accessToken:token})
+        }
+        catch(err)
+        {
+            return next(createHttpError(500,"Error While generating the JWT Token"))
+        }
+    }
+    catch(err)
+    {
+        return next(createHttpError(500, "Error While searching the user"))
+    }
 
 }
 
-export { createUser,loginUser}
+export { createUser, loginUser }
