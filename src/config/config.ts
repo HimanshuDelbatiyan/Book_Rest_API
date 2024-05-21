@@ -13,7 +13,10 @@ const _config =
     port: process.env.PORT,
     mongoURL: process.env.MONGO_CONNECTION_STRING,
     env: process.env.NODE_ENV,
-    jwtSecret: process.env.JWT_SECRET
+    jwtSecret: process.env.JWT_SECRET,
+    cloudName: process.env.CLOUDINARY_CLOUD,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    cloudSecret: process.env.CLOUDINARY_SECRET
 }
 
 // By using the "Object.freeze()" we are making the object.
