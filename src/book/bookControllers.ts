@@ -40,6 +40,9 @@ const createBook = async (req:Request,res:Response,next:NextFunction) =>
          folder: "book_pdfs",
          format: "pdf"
       }) 
+
+      //@ts-ignore
+      console.log("userId",req.userId)
       
       const newBook = await BookModel.create({
          title,

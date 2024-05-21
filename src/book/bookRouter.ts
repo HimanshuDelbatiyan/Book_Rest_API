@@ -1,6 +1,7 @@
 import express from "express";
 import { createBook } from "./bookControllers";
 import multer from "multer";
+import authenticate from "../middleware/authenticate";
 import path from "path";
 // Creating the Router instance.
 const bookRouter = express.Router();
@@ -14,7 +15,7 @@ const upload = multer({
 
 // Note: .fields method is used when we want to accept the file uploads from multiple fields.
 // as well as specifying the number of files which user can upload from the each field.
-bookRouter.post("/",upload.fields([
+bookRouter.post("/",authenticate,upload.fields([
     {name:"coverImage", maxCount:1},
     {name: "file", maxCount:1}
 ]),createBook)
