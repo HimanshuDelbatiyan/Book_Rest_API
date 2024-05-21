@@ -2,12 +2,17 @@ import { Request, Response, NextFunction, raw } from "express";
 import cloudinary from "../config/cloudinary";
 import path from "path";
 import createHttpError from "http-errors";
+import BookModel from "../book/bookModel";
+import fs from "fs";
 
 const createBook = async (req:Request,res:Response,next:NextFunction) =>
 {
 
    try
    {
+
+      const {title, genre}  = req.body;
+
       // Note: As user is uploading the multiple files so multiple files
       //data will be attached to the request object after processing by the multer
       console.log("files",req.files);
@@ -36,18 +41,21 @@ const createBook = async (req:Request,res:Response,next:NextFunction) =>
          format: "pdf"
       }) 
       
+      const newBook = await BookModel.create({
+         title,
+         genre,
+         author : "664685df3025b29b044363cd" ,
+         coverImage: uploadResult.secure_url,
+         file: bookFileUploadResult.secure_url
 
-      
+      })
 
+      // Delete Temp Files from the local storage
 
+      await fs.promises.unlink(filePath)
+      await fs.promises.unlink(bookFilePath)
 
-
-
-
-
-
-
-      res.json({CoverResult: uploadResult, pdfResult: bookFileUploadResult})
+      res.status(210).json({id: newBook._id})
    }
    catch(err)
    {
