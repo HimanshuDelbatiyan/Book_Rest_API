@@ -1,8 +1,10 @@
 import express, { Request, Response , NextFunction } from "express";
 import createHttpError, { HttpError } from "http-errors";
 import GlobalErrorHandler from "./middleware/globalErrorHandler";
+import {config} from "./config/config"
 import userRouter from "./user/userRouter";
 import bookRouter from "./book/bookRouter";
+import cors from "cors";
 
 // Creating the instance of Express Application
 const app = express();
@@ -11,6 +13,12 @@ const app = express();
 // if we don't use this then this will cause error
 // cause we will not able to access the json data associated with the request
 app.use(express.json())
+
+
+// Browser Specific Errors
+app.use(cors({
+    origin: config.frontEndDomain
+}))
 
 // Routes:
 // HTTP Methods 

@@ -16,7 +16,8 @@ const _config =
     jwtSecret: process.env.JWT_SECRET,
     cloudName: process.env.CLOUDINARY_CLOUD,
     apiKey: process.env.CLOUDINARY_API_KEY,
-    cloudSecret: process.env.CLOUDINARY_SECRET
+    cloudSecret: process.env.CLOUDINARY_SECRET,
+    frontEndDomain : process.env.FRONTEND_DOMAIN
 }
 
 // By using the "Object.freeze()" we are making the object.
