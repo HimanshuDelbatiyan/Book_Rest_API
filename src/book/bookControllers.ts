@@ -38,7 +38,7 @@ const createBook = async (req:Request,res:Response,next:NextFunction) =>
       const bookFileUploadResult = await cloudinary.uploader.upload(bookFilePath,{
          resource_type: "raw",
          filename_override: bookFileName,
-         folder: "book_pdfs",
+         folder: "book-pdfs",
          format: "pdf"
       }) 
 
@@ -126,7 +126,7 @@ const updateBook = async (req:Request, res:Response, next:NextFunction) =>
 
          const bookFileName = files.file[0].filename;
 
-         const uploadResultPdf = await cloudinary.uploader.upload(bookFilePath,{resource_type: "raw", filename_override: bookFileName, folder: "book-covers",format:"pdf"})
+         const uploadResultPdf = await cloudinary.uploader.upload(bookFilePath,{resource_type: "raw", filename_override: bookFileName, folder: "book-pdfs",format:"pdf"})
 
 
          completeFileName = uploadResultPdf.secure_url;
@@ -182,4 +182,53 @@ const getSingleBook = async (req:Request, res: Response, next: NextFunction) =>
    }
 }
 
-export {createBook, updateBook, listBooks, getSingleBook}
+const deleteBook = async (req:Request, res: Response, next:NextFunction) =>
+   {
+      const bookId = req.params.bookId;
+
+      const book = await BookModel.findOne({_id:bookId});
+
+      if(!book)
+      {  
+         return next(createHttpError(404, "Book Not Found"))
+      }
+      
+      //@ts-ignore
+      if(book.author.toString() !== req.userId)
+      {
+         return next(createHttpError(403, "Unauthenticated Operation"))
+      }
+
+      const coverFileSplits = book.coverImage.split("/");
+      const coverImagePublicId = coverFileSplits.at(-2) + 
+      "/" + (coverFileSplits.at(-1)?.split(".").at(-2))
+
+      console.log("Cover Public ID", coverImagePublicId)
+
+
+      const bookFileSplits = book.file.split("/")
+      const bookFilePublicId = bookFileSplits.at(-2) + "/"
+      + bookFileSplits.at(-1)
+
+      console.log("File Public ID", bookFilePublicId)
+
+      try
+      {
+         await cloudinary.uploader.destroy(coverImagePublicId);
+
+         await cloudinary.uploader.destroy
+         (bookFilePublicId, {resource_type: "raw"});
+         // Note: Have to do this for file type PDF's
+
+         await BookModel.deleteOne({_id:bookId})
+         
+         // Status Code for Deleting the resource 204
+         res.sendStatus(204)
+      }
+      catch(err)
+      {
+         return next(createHttpError(500, "Error While deleting the files from the Cloud"))
+      }
+   }
+
+export {createBook, updateBook, listBooks, getSingleBook, deleteBook}
