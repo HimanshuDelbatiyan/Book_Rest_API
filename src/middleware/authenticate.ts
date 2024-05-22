@@ -28,9 +28,10 @@ const authenticate = (req:Request,res:Response,next:NextFunction) =>
 
 
             //????????????//
-            const _req = req as AuthRequest;
+            // const _req = req as AuthRequest;
 
-            _req.userId = decoded.sub as string;
+            //@ts-ignore
+            req.userId = decoded.sub as string;
 
 
         next();
