@@ -26,15 +26,11 @@ const authenticate = (req:Request,res:Response,next:NextFunction) =>
 
             console.log('decoded',decoded)
 
+            const _req = req as AuthRequest;
 
-            //????????????//
-            // const _req = req as AuthRequest;
+            _req.userId = decoded.sub as string;
 
-            //@ts-ignore
-            req.userId = decoded.sub as string;
-
-
-        next();
+            next(); // Pass the Control to the next middleware
 
         } catch (error) 
         {

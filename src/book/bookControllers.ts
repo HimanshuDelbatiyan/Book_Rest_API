@@ -6,64 +6,75 @@ import BookModel from "../book/bookModel";
 import fs from "fs";
 import { AuthRequest } from "../middleware/authenticate";
 
+
+// This method will insert the new book into the "books" collection as well 
+// as upload the uploaded documents to "Cloudinary Cloud"
 const createBook = async (req:Request,res:Response,next:NextFunction) =>
 {
-
    try
    {
-
       const {title, genre}  = req.body;
 
       // Note: As user is uploading the multiple files so multiple files
       //data will be attached to the request object after processing by the multer
       console.log("files",req.files);
 
-      //?????
+      // This is not necessary but the TypScript will show error which can be ignored
       const files = req.files as {[filename:string]:Express.Multer.File[]};
 
+      // Getting the Cover Image Type, location and name
       const coverImageMimeType = files.coverImage[0].mimetype.split("/").at(-1);
       const filename = files.coverImage[0].filename;
       const filePath = path.resolve(__dirname,"../../public/data/uploads",filename);
-
-      const uploadResult = await cloudinary.uploader.upload(filePath,{
-         filename_override:filename,
-         folder : "book-covers",
-         format: coverImageMimeType
-      }) 
       
+      // Using the Cloudinary to upload the cover images to the cloud
+      // Note: This method return the object of the uploaded document containing lots of information about the upload
+      const uploadResult = await cloudinary.uploader.upload(filePath,
+         {
+            filename_override:filename, // Overriding the file name or can use UUID Package for unique name
+            folder : "book-covers", // Specifying the folder
+            format: coverImageMimeType, // Specifying the "Extension" of the file
+            resource_type: "image" // Specifying the resource type like image video etc
+         }
+      ) 
+      
+      // Getting the Book File Type, location and name
       const bookFileName = files.file[0].filename;
       const bookFilePath = path.resolve(__dirname,"../../public/data/uploads", bookFileName)
-      const bookFileFormat = files.file[0].mimetype;
       
+      // Using the Cloudinary to upload the cover images to the cloud
+      // Note: This method return the object of the uploaded document containing lots of information about the upload
       const bookFileUploadResult = await cloudinary.uploader.upload(bookFilePath,{
-         resource_type: "raw",
-         filename_override: bookFileName,
+         resource_type: "raw", // Specifying the type of resource like "raw" is for "pdf's or text file"
+         filename_override: bookFileName, 
          folder: "book-pdfs",
-         format: "pdf"
+         format: "pdf" // Specifying the "Extension" of the file
       }) 
 
-      //?????????????????????????
+      // --> FOCUS 
+      // So what we are doing here is that we are indirectly accessing the value of the variable
+      // Defined in the interface called AuthRequest and in the same way we set the value of this variable
+      // We just need to have an Variable to inherit that type using "as" and then we can the do the normal operations
       const _req = req as AuthRequest
 
-      //@ts-ignore
-      console.log(req.userId)
+      console.log(_req.userId) // Log the user id into the console.
 
+      // Creating a new Book Document
       const newBook = await BookModel.create({
          title,
          genre,
-         //@ts-ignore
-         author : req.userId ,
-         coverImage: uploadResult.secure_url,
-         file: bookFileUploadResult.secure_url
-
+         author : _req.userId ,
+         coverImage: uploadResult.secure_url, // Publicly Accessible Secure URL for Book Cover Image
+         file: bookFileUploadResult.secure_url //
       })
 
-      // Delete Temp Files from the local storage
-
+      // Delete Temp Files from the local storage using the "fs" package
       await fs.promises.unlink(filePath)
       await fs.promises.unlink(bookFilePath)
 
-      res.status(210).json({id: newBook._id})
+      // Send the response to the user
+      // Status: 201 Means a new resource created
+      res.status(201).json({id: newBook._id})
    }
    catch(err)
    {
@@ -72,141 +83,230 @@ const createBook = async (req:Request,res:Response,next:NextFunction) =>
    }
 }
 
+// Updates the existing book with the new information
+// Pending does not delete the old uploads to cloud
 const updateBook = async (req:Request, res:Response, next:NextFunction) =>
    {
       const {title, genre}  = req.body;
 
+      // Getting the ID sent with the URL
       const bookId = req.params.bookId
 
+      // Finding the book associated with that ID
       const book = await BookModel.findOne({_id:bookId})
 
-      if(!book)
+      if(!book) // If empty
       {
-         return res.status(404).json({message:"Book Not Found"})
+         return next(createHttpError(404,"Error: No Book Found"))
       }
-      
+
+      // Indirectly Value Accessing
+      const _req = req as AuthRequest;
 
       // Access Checking
-      //@ts-ignore
-      if(book.author.toString() !== req.userId)
+      if(book.author.toString() !== _req.userId)
       {
-         // 403 --> Unauthorized
-         return res.status(403).json({message:"Unauthorized"})
+         // 403 --> Forbidden / Not rights to make the changes
+         return next(createHttpError(403,"Error: No Rights to make changes"))
       }
 
+      // Split the Cover Image stored URL based on "/"
+      const coverFileSplits = book.coverImage.split("/");
+      // Then find the public id of the upload
+      const coverImagePublicId = coverFileSplits.at(-2) + 
+      "/" + (coverFileSplits.at(-1)?.split(".").at(-2))
+
+      console.log("Deleted Cover Public ID", coverImagePublicId)
+
+
+      // Split the Book File Stored URL based on "/"
+      const bookFileSplits = book.file.split("/");
+      // Then find the Public ID
+      const bookFilePublicId = bookFileSplits.at(-2) + "/"
+      + bookFileSplits.at(-1)
+
+      console.log("Deleted File Public ID", bookFilePublicId)
+
+      try // Removing the OLD UPLOADS From the Cloud
+      {
+         await cloudinary.uploader.destroy(coverImagePublicId);
+
+         await cloudinary.uploader.destroy
+         (bookFilePublicId, {resource_type: "raw"});
+         // Note: Have to do this for file type PDF's like defining the resource
+      }
+      catch(err)
+      {
+         return next(createHttpError(500, "Error While deleting the files from the Cloud"))
+      }
+
+      // For Book Cover
       let completeCoverImage = "";
+      // For Book File 
+      let completeFileName = ""
 
-
-           //?????
+      // Not Needed but alright
       const files = req.files as {[filename:string]:Express.Multer.File[]};
 
-      // @ts-ignore
-      if(files.coverImage)
+      // Cloud Book Cover Image
+      try
       {
-         const fileName = files.coverImage[0].filename;
-         const coverMimeType = files.coverImage[0].mimetype.split("/").at(-1);
+         // if the user sends the cover image
+         if(files.coverImage) 
+         {
 
-         const filePath = path.resolve(__dirname, "../../public/data/uploads" , fileName)
+            // Getting the name,type and path
+            const fileName = files.coverImage[0].filename;
+            const coverMimeType = files.coverImage[0].mimetype.split("/").at(-1);
+            const filePath = path.resolve(__dirname, "../../public/data/uploads" , fileName)
 
-         completeCoverImage = `${fileName}.${coverMimeType}`;
+            // Image name with extension
+            completeCoverImage = `${fileName}.${coverMimeType}`;
 
-         const uploadResult = await cloudinary.uploader.upload(filePath,{filename_override:fileName, folder:"book-covers",format:coverMimeType});
+            // Uploading the image to the cloud using the cloudinary
+            const uploadResult = await cloudinary.uploader.upload(filePath,
+               {
+                  filename_override:fileName, folder:"book-covers",
+                  format:coverMimeType,
+                  resource_type: "image"
+               });
+            
+            completeCoverImage = uploadResult.secure_url;
 
-         completeCoverImage = uploadResult.secure_url;
+            // Delete the Temp File
+            await fs.promises.unlink(filePath);
 
-         await fs.promises.unlink(filePath);
+         }
+      }
+      catch(err)
+      {
+         return next(createHttpError(500,"Error While uploading the Cover file to cloud"))
+      }
+     
+      // Cloud Book File 
+      try
+      {
+         if(files.file)
+         {  
+            // Getting the file name and path
+            const bookFilePath = path.resolve(__dirname, "../../public/data/uploads", files.file[0].filename)
+            const bookFileName = files.file[0].filename;
 
+            // Uploading the file to cloud
+            const uploadResultPdf = await cloudinary.uploader.upload(bookFilePath,
+            {
+               resource_type: "raw", // This is must for PDF's File
+               filename_override: bookFileName, 
+               folder: "book-pdfs",
+               format:"pdf"
+            })
+
+            completeFileName = uploadResultPdf.secure_url;
+
+            // Delete the Temp File Stored at LocalStorage
+            await fs.promises.unlink(bookFilePath);
+         }
+      } catch(err)
+      {
+         return next(createHttpError(500,"Error While uploading the Pdf to cloud"))
       }
 
+      // Database
+      try
+      {
+         // Find the book associated with the ID sent with the URL
+         const updatedBook = await BookModel.findOneAndUpdate({_id: bookId},
+            {
+               title,
+               genre,
+               // using the ternary operator
+               // if the user uploads a new cover image then that will be used otherwise old will be used
+               // same with the book pdf file
+               coverImage: completeCoverImage ? completeCoverImage : book.coverImage,
+               file: completeFileName ? completeFileName : book.file
+            }
+         ,{new:true}) // By passing the "new" as we are saying that return the updated document not the before updating
 
-      let completeFileName = ""
-      if(files.file)
-      {  
-         const bookFilePath = path.resolve(__dirname, "../../public/data/uploads", files.file[0].filename)
-
-         const bookFileName = files.file[0].filename;
-
-         const uploadResultPdf = await cloudinary.uploader.upload(bookFilePath,{resource_type: "raw", filename_override: bookFileName, folder: "book-pdfs",format:"pdf"})
-
-
-         completeFileName = uploadResultPdf.secure_url;
-
-         await fs.promises.unlink(bookFilePath);
-      
+         // Status Code --> 200 means update is successful
+         res.status(200).json(updatedBook); // Return the updated book document as response
+      }catch(err)
+      {
+         return next(createHttpError(500, "Error while updating the document in Database"))
       }
-
-      const updatedBook = await BookModel.findOneAndUpdate({_id: bookId},{
-         title,
-         genre,
-         coverImage: completeCoverImage ? completeCoverImage : book.coverImage,
-
-      },{new:true})
-
-
-      res.json(updatedBook);
    }
 
+
+// This method lists all the books present in the database
 const listBooks = async (req:Request, res:Response, next: NextFunction) =>
    {
       try 
       {
-         const book = await BookModel.find(); 
-
+         const book = await BookModel.find();  // Find all the books
          res.json(book)
       } 
       catch (error) 
       {
          return next(createHttpError(500, "Error While getting books"))
-         
       }
    }
 
+
+// Retrieves the single book and sent that book document as response to the user
 const getSingleBook = async (req:Request, res: Response, next: NextFunction) => 
 {
+   // Getting the book id from the URL
    const bookId = req.params.bookId;
 
    try 
    {
+      // Find the specific book
       const book = await BookModel.findOne({_id: bookId});
 
-      if(!book)
+      if(!book) // if empty
       {
          return next(createHttpError(404, "No Books are associated with this id"))
       }
+      // just send the retrieved book document
       res.json(book);
    }
     catch (error) 
    {
       return next(createHttpError(500, "Error While getting a book"))
-      
    }
 }
 
+// Deletes the specific Book from the modal as well as remove the media associated with book from the cloud
 const deleteBook = async (req:Request, res: Response, next:NextFunction) =>
    {
-      const bookId = req.params.bookId;
+      const bookId = req.params.bookId; // Getting the book id from the URL
 
+      // Retrieving the specific book
       const book = await BookModel.findOne({_id:bookId});
 
-      if(!book)
+      if(!book) // if empty
       {  
          return next(createHttpError(404, "Book Not Found"))
       }
       
-      //@ts-ignore
-      if(book.author.toString() !== req.userId)
+      const _req = req as AuthRequest;
+
+      if(book.author.toString() !== _req.userId)
       {
          return next(createHttpError(403, "Unauthenticated Operation"))
       }
 
+      // Split the Cover Image stored URL based on "/"
       const coverFileSplits = book.coverImage.split("/");
+      // Then find the public id of the upload
       const coverImagePublicId = coverFileSplits.at(-2) + 
       "/" + (coverFileSplits.at(-1)?.split(".").at(-2))
 
       console.log("Cover Public ID", coverImagePublicId)
 
 
-      const bookFileSplits = book.file.split("/")
+      // Split the Book File Stored URL based on "/"
+      const bookFileSplits = book.file.split("/");
+      // Then find the Public ID
       const bookFilePublicId = bookFileSplits.at(-2) + "/"
       + bookFileSplits.at(-1)
 
