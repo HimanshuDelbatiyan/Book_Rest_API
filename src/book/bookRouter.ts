@@ -1,6 +1,6 @@
 import express from "express"; 
 // Importing the Router Handlers 
-import { createBook ,updateBook, listBooks, getSingleBook, deleteBook} from "./bookControllers";
+import { createBook ,updateBook, listBooks, getSingleBook, deleteBook,listSpecificBooks} from "./bookControllers";
 import multer from "multer";
 // Authentication Method
 import authenticate from "../middleware/authenticate";
@@ -35,6 +35,8 @@ bookRouter.patch("/:bookId",authenticate, upload.fields([
 
 // -----------> GET Method (List all the books)
 bookRouter.get("/",listBooks)
+// -----------> GET Method (List User Specific books)
+bookRouter.get("/specific",authenticate,listSpecificBooks)
 //-----------> GET Method (Retrieve Single Book)
 bookRouter.get("/:bookId",getSingleBook)
 // ----------> Delete Method (Deletes an Single Book)

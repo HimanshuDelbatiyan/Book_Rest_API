@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import { Book } from "./bookTypes";
 
 const Schema = mongoose.Schema;
-                            // Type Specification
+                            // Type Specification (It is important so that we only have the specific format document stored inside the
+                            // Collection.
 const bookSchema = new Schema<Book>
 (
     {
@@ -12,6 +13,7 @@ const bookSchema = new Schema<Book>
             ref: "user", // Specifying to which Collection This ID will belong to
             required: true
         },
+        description:{type:String,required:true},
         coverImage: {type:String, required:true},
         file: {type:String,required:true},
         genre: {type:String,required:true},

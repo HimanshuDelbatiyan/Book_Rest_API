@@ -23,6 +23,7 @@
     "typescript-eslint": "^7.9.0"
   },
   "dependencies": {
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/jsonwebtoken": "^9.0.6",

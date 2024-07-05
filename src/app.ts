@@ -18,9 +18,12 @@ app.use(express.json())
 // Using the CORS (Cross-Region Resource Sharing)
 // as well as specifying what domain can access this API
 // Domain's are specified in environment variables
+
 app.use(cors({
-    origin: config.frontEndDomain
+    origin: config.frontEndDomain,
 }))
+
+
 
 // Routes:
 // HTTP Methods 

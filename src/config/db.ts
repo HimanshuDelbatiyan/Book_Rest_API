@@ -7,7 +7,7 @@ const connectDB = async () =>
     try
     {
         
-        // Registering the Event Listeners
+        // Registering the Event Listeners first
         const db = mongoose.connection;
 
         db.on("connected", () => {
@@ -18,6 +18,7 @@ const connectDB = async () =>
         {
             console.error("Error in Connecting to database ",err)
         })
+
         await mongoose.connect(config.mongoURL as string);
 
         

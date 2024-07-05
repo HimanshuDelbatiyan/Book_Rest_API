@@ -34,7 +34,8 @@ const authenticate = (req:Request,res:Response,next:NextFunction) =>
 
         } catch (error) 
         {
-            return next(createHttpError(401,"Token Expired"))
+            // @ts-ignore
+            return next(createHttpError(401,`Token Expired ${error.message}`))
         }
     }
 

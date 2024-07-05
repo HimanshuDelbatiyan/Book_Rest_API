@@ -13,6 +13,8 @@ export interface Book
 
     author: User;
 
+    description:string;
+
     genre:string;
 
     coverImage: string;
